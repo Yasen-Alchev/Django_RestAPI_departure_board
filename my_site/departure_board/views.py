@@ -9,9 +9,9 @@ def departure(response):
     return HttpResponse("Hello Departure Board")
 
 def index(request):
-    link = "https://api-v3.mbta.com/predictions?page%5Boffset%5D=0&page%5Blimit%5D=10&sort=departure_time&include=vehicle%2Ctrip&filter%5Bdirection_id%5D=0&filter%5Bstop%5D=place-north"
+    link = "https://api-v3.mbta.com/predictions?page%5Boffset%5D=0&page%5Blimit%5D=10&sort=departure_time&include=vehicle%2Cschedule%2Ctrip&filter%5Bdirection_id%5D=0&filter%5Bstop%5D=place-north"
     content = requests.get(link).json()
-    
+
     data = content['data']
     included = content['included']
 
@@ -19,8 +19,11 @@ def index(request):
 
     for entry in data:
         entry_data = {}
-        
-        entry_data['time'] = entry['attributes']['departure_time']
+
+        for i in included:
+            if i['id'] == entry['relationships']['schedule']['data']['id']:
+                entry_data['time'] = i['attributes']['departure_time']
+                break
 
         if entry['relationships']['vehicle']['data'] is not None:
             train_id = entry['relationships']['vehicle']['data']['id']
@@ -37,7 +40,7 @@ def index(request):
             if i['id'] == train_id:
                 entry_data['train'] = i['attributes']['label']
                 break
-        
+
         entry_data['track'] = "TBD"
         entry_data['status'] = entry['attributes']['status']
 
